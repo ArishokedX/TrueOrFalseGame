@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TrueOrFalseGame
 {
-    public class TrueOrFalseGame
+    public class GameManger
     {
         /// <summary>
         /// Event for user to input answer
@@ -20,11 +20,11 @@ namespace TrueOrFalseGame
         /// <summary>
         /// Event triggered when the game ends
         /// </summary>
-        public event Action<TrueOrFalseGame> GameEnded;
+        public event Action<GameManger> GameEnded;
         /// <summary>
         /// Contains default path to file
         /// </summary>
-        private readonly string _filePath;
+        
         /// <summary>
         /// Contains questions
         /// </summary>
@@ -33,10 +33,11 @@ namespace TrueOrFalseGame
         /// Contains current record index
         /// </summary>
         private int _curIndex;
+
         /// <summary>
         /// Contains max errors to lose game.
         /// </summary>
-        private readonly int _maxErrors;
+        private GameSettings _settings;
         /// <summary>
         /// Contains errors done by user.
         /// </summary>
@@ -48,7 +49,7 @@ namespace TrueOrFalseGame
         {
             get
             {
-                return _maxErrors - ErrorsDone;
+                return _settings.MaxMistakesAllowed - ErrorsDone;
             }
         }
 
@@ -76,11 +77,10 @@ namespace TrueOrFalseGame
         /// Initializes a new instance of the TrueOrFalseGame class, which acts as a true or false game handler.
         /// </summary>
         /// <param name="filePath">Initializes default path to file.</param>
-        public TrueOrFalseGame(string filePath,int maxErrors = 2)
+        public GameManger(GameSettings settings)
         {
-            _filePath=filePath;
+            _settings = settings;
             State = GameState.NotStarted;
-            _maxErrors = maxErrors;
         }
         /// <summary>
         /// Reading csv file. File must contain at least one line. Records must be separated by ';'.
@@ -95,14 +95,14 @@ namespace TrueOrFalseGame
         /// <exception cref="FormatException"></exception>
         public void ReadCsv(string filePath = "")
         {
-            filePath = string.IsNullOrWhiteSpace(filePath) ? _filePath : filePath; 
+            filePath = string.IsNullOrWhiteSpace(filePath) ? _settings.QuestionsFilePath : filePath; 
             try
             {
                 _records = File.ReadAllLines(filePath).Select(Record.ParseCSVLine).ToList();
             }
             catch (FileNotFoundException)
             {
-                throw new FileNotFoundException("Wrong file path");
+                throw new FileNotFoundException($"File not found int path {filePath}.");
             }
             catch (IOException)
             {
@@ -110,7 +110,7 @@ namespace TrueOrFalseGame
             }
             catch (ArgumentException)
             {
-                throw new ArgumentException("File is empty.");
+                throw new ArgumentException($"File not found in path {filePath}.");
             }
             catch (FormatException)
             {
@@ -146,7 +146,7 @@ namespace TrueOrFalseGame
             ErrorsDone = 0;
             RightAnswersCount = 0;
             _curIndex = 0;
-            while (State == GameState.InProgress && _curIndex < _records.Count && ErrorsDone < _maxErrors)
+            while (State == GameState.InProgress && _curIndex < _records.Count && ErrorsDone < _settings.MaxMistakesAllowed)
             {
                 var userAnswer = InputAnswer(_records[_curIndex].Question);
                 bool isRight = userAnswer == _records[_curIndex].Answer;
@@ -162,7 +162,7 @@ namespace TrueOrFalseGame
 
             if (State != GameState.Aborted)
             {
-                State = ErrorsDone == _maxErrors ? GameState.Lost : GameState.Won;
+                State = ErrorsDone == _settings.MaxMistakesAllowed ? GameState.Lost : GameState.Won;
                 GameEnded(this);
             }
         }
