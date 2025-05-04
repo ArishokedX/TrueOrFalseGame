@@ -1,0 +1,7 @@
+{
+  "GameSettings": {
+    "QuestionsFilePath": "questions.csv",
+    "MaxMistakesAllowed": 2,
+    "Encoding": "utf-8"
+  }
+}

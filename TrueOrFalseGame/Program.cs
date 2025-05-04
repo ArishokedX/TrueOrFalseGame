@@ -1,115 +1,125 @@
-﻿namespace TrueOrFalseGame
+﻿using System.Text;
+
+namespace TrueOrFalseGame
 {
+    using System.Reflection;
+    using System.Runtime;
     using Microsoft.Extensions.Configuration;
     internal class Program
     {
         // const string DefaultPath = "Questions.csv";
         // private const int DefaultMaxMistakes = 2;
+        private static GameController gameController;
         private const string jsonPath = "settings.json";
         static void Main(string[] args)
         {
-            
+
             try
             {
-               // GameSettings settings;
-                if (!TryInitializeFromJson(out var settings))
-                {
-                    Console.ReadLine();
-                    return;
-                }
-                var game = new GameManger(settings);
-                game.InputAnswer += InputAnswerHandler;
-                game.ShowAnswer += ShowAnswerHandler;
-                game.GameEnded += GameEndedHandler;
-                game.ReadCsv();
+
+                InitializeFromJson(out var settings);
+                IQuestionSource qs = new CsvQuestionSource(settings.QuestionsFilePath, settings.MaxMistakesAllowed,
+                    settings.Separator);
+                gameController = new GameController(qs,settings.PositiveAsnwersArray.Select(x=>x.Trim()), settings.NegativeAsnwersArray.Select(x => x.Trim()));
+                gameController.OnQuestionAsked += OnQuestionAskedHandler;
+                gameController.OnAnswerProcessed += OnAnswerProcessedHandler;
+                gameController.OnGameEnded += OnGameEndedHandler;
+              
                 do
                 {
+
                     Console.Clear();
-                    game.Start();
+                    Console.WriteLine(
+                        $"RulesЖ.Э+" +
+                        $"Your answer question. If ypu reach {settings.MaxMistakesAllowed} mistakes you lose."+
+                        $"\n{settings.PositiveAsnwers} => if it's true"+
+                        $"\n{settings.NegativeAsnwers} => if it's false");
+                    gameController.StartGame();
                     Console.Write("Do you wish to try again? Press Yes to continue: ");
-                } while (Console.ReadLine()?.ToUpper() == "YES");
+                } while (Console.ReadLine()?.ToLowerInvariant() == "yes");
 
 
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
+                Console.ReadLine();
+                ;
             }
 
         }
 
 
-        private static bool TryInitializeFromJson(out GameSettings settings)
+        private static void InitializeFromJson(out GameSettings settings)
         {
-            var result = true;
-            settings = null;
-            IConfigurationRoot configuration;
-            try
+            if (!File.Exists(jsonPath))
             {
-                configuration = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile(jsonPath)
-                    .Build();
-                settings = configuration.GetSection("GameSettings").Get<GameSettings>();
+                throw new FileNotFoundException($"Configuration file {jsonPath} not found");
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                result= false;
-            }
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile(jsonPath, optional: false, reloadOnChange: true)
+                .Build();
+
+            
+            settings = configuration.GetSection("GameSettings").Get<GameSettings>()
+                           ?? throw new InvalidOperationException("GameSettings section is missing");
 
             if (string.IsNullOrWhiteSpace(settings.QuestionsFilePath))
             {
-                Console.WriteLine($"Error in reading path to questions file from {jsonPath}.");
-                result = false;
+                throw new InvalidOperationException("QuestionsFilePath is not configured");
             }
 
-            if (settings.MaxMistakesAllowed == default)
+            if (settings.MaxMistakesAllowed <= 0)
             {
-                Console.WriteLine($"Error in reading max allowed mistakes count from {jsonPath}.");
-                result = false;
+                throw new InvalidOperationException("MaxMistakesAllowed must be positive");
             }
 
-            return result;
-        }
-        private static Answer InputAnswerHandler(string question)
-        {
-            string userAnswer=string.Empty;
-            bool correctInput = false;
-            while (!correctInput)
-            {
-                Console.WriteLine(question);
-                Console.WriteLine(@"Do you believe in previous statement. Yes\No?");
-                userAnswer = Console.ReadLine().ToUpper();
-                correctInput = userAnswer == "YES" || userAnswer == "NO";
-            } 
             
-            return userAnswer == "YES" ? Answer.Yes : Answer.No;
-        }
-
-        private static void ShowAnswerHandler(bool isRirght,string clue)
-        { 
-            Console.WriteLine(isRirght ? "Amazing! You was right." : "Oops, you were wrong."+clue);
-        }
-
-        private static void GameEndedHandler(GameManger sender)
-        {
-            switch (sender.State)
+            if (!File.Exists(settings.QuestionsFilePath))
             {
-                case GameState.Won:
-                    Console.WriteLine($"Congratulations! You won the game. Attempts left {sender.AttemptsLeft}");
-                break;
-                case GameState.Lost:
-                    Console.WriteLine($"Nice try. Your answered right for {sender.RightAnswersCount} questions. Questions left {sender.QuestionsLeft}");
-                    break;
-                case GameState.Aborted:
-                    Console.WriteLine($"Game was aborted by user.");
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException("Unxpected game state.");
-            } 
-               
+                throw new FileNotFoundException($"Questions file not found at: {settings.QuestionsFilePath}");
+            }
 
+            Console.WriteLine($"Config loaded successfully. Questions file: {settings.QuestionsFilePath}");
+        }
+
+        private static void OnQuestionAskedHandler(string question)
+        {
+            Console.WriteLine(question);
+            bool validAnswer = false;
+            string userAnswer=string.Empty;
+            Console.WriteLine(@"Do you believe in previous statement?");
+            while (!validAnswer)
+            {
+                userAnswer = Console.ReadLine();
+                validAnswer = gameController.ValidateAnswer(userAnswer);
+                if(!validAnswer)
+                    Console.WriteLine(@"Please, enter valid answer.");
+            }
+            
+            gameController.SubmitAnswer(userAnswer);
+            // return userAnswer == "YES" ? true : false;
+        }
+
+        private static void OnAnswerProcessedHandler(GameResult ansResult)
+        {
+            Console.WriteLine(ansResult.IsCorrect
+                ? $"Amazing! You was right.\nQuestions left " +
+                  $"{ansResult.QuestionsLeft}.\nAttempts left {ansResult.AttemptsLeft}"
+                : $"Oops, you were wrong.\n{ansResult.Explanation}.\nQuestions left " +
+                  $"{ansResult.QuestionsLeft}.\nAttempts left {ansResult.AttemptsLeft}");
+            Console.WriteLine();
+        }
+
+        private static void OnGameEndedHandler(GameResult gameResult)
+        {
+            
+            Console.WriteLine(gameResult.IsWinner ? $"Congratulations! You won the game. You answered right for {gameResult.Score}"
+                : $"Nice try. You answered right for {gameResult.Score} questions. Questions left {gameResult.QuestionsLeft}");
+          
+               
+        
         }
     }
 }
