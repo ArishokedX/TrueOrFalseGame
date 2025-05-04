@@ -44,31 +44,31 @@ namespace TruOrFalseGame.Tests.Integreation
             gameController.OnGameEnded += q => gameResult = q;
 
             
-           // gameController.StartGame();
-            // receivedQuestion.Should().NotBeNull();
-            // receivedQuestion.Should().Contain("Тест");
-            //
-            // gameController.SubmitAnswer("yes");
-            //
-            // questionResult.Should().NotBeNull();
-            // questionResult.IsCorrect.Should().BeTrue();
-            //
-            // receivedQuestion.Should().NotBeNull();
-            // receivedQuestion.Should().Contain("Тест 2");
-            //
-            // gameController.SubmitAnswer("no");
-            //
-            // questionResult.Should().NotBeNull();
-            // questionResult.IsCorrect.Should().BeTrue();
-            //
-            // gameController.SubmitAnswer("no");
-            // gameController.SubmitAnswer("no");
-            //
-            // gameResult.Should().NotBeNull();
-            // gameResult.Should().NotBeNull();
-            // gameResult.AttemptsLeft.Should().Be(_maxMistakesAllowed);
-            // gameResult.IsWinner.Should().BeTrue();
-            // gameResult.Score.Should().Be(2);
+            gameController.StartGame();
+            receivedQuestion.Should().NotBeNull();
+            receivedQuestion.Should().Contain("Тест");
+            
+            gameController.SubmitAnswer("yes");
+            
+            questionResult.Should().NotBeNull();
+             questionResult.IsCorrect.Should().BeTrue();
+            
+            receivedQuestion.Should().NotBeNull();
+            receivedQuestion.Should().Contain("Тест 2");
+            
+            gameController.SubmitAnswer("no");
+            
+            questionResult.Should().NotBeNull();
+            questionResult.IsCorrect.Should().BeTrue();
+            
+            gameController.SubmitAnswer("no");
+            gameController.SubmitAnswer("no");
+            
+            gameResult.Should().NotBeNull();
+            gameResult.Should().NotBeNull();
+            gameResult.AttemptsLeft.Should().Be(_maxMistakesAllowed);
+            gameResult.IsWinner.Should().BeTrue();
+            gameResult.Score.Should().Be(2);
         }
 
         public void Dispose()
