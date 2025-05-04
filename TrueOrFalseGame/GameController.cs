@@ -81,7 +81,7 @@ namespace TrueOrFalseGame
         public bool ValidateAnswer(string answer)
         {
             
-            return _engine.ProcessAnswerValidation(answer.Trim().ToLowerInvariant());
+            return _engine.IsValidAnswerFormat(answer.Trim().ToLowerInvariant());
         }
     }
 }

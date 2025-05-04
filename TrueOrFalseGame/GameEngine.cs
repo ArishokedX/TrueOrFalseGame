@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace TrueOrFalseGame
 {
@@ -12,8 +13,10 @@ namespace TrueOrFalseGame
         private readonly int _maxMistakesAllowed;
         private int _currentQuestionIndex;
         private int _mistakesCount;
-        private static IEnumerable<string> _positiveAnwsersArray;
-        private static IEnumerable<string> _negativeAnwsersArray;
+        public IReadOnlyCollection<string> DefaultPositiveAnswers = ["да", "yes", "1", "true","+"];
+        public IReadOnlyCollection<string> DefaultNegativeAnswers = ["нет", "no", "0", "false", "-"];
+        private readonly IReadOnlyCollection<string> _positiveAnswersArray;
+        private readonly IReadOnlyCollection<string> _negativeAnswersArray;
         public int Score { get; private set; }
         public bool IsGameEnded => _currentQuestionIndex >= _questions.Count || IsGameLost;
         public bool IsGameLost => _mistakesCount >= _maxMistakesAllowed;
@@ -29,8 +32,8 @@ namespace TrueOrFalseGame
             _maxMistakesAllowed = maxMistakesAllowed > 0
                 ? maxMistakesAllowed
                 : throw new ArgumentException("Max mistakes must be positive");
-            _positiveAnwsersArray = positiveAnwsersArray;
-            _negativeAnwsersArray = negativeAnwsersArray;
+            _positiveAnswersArray = positiveAnwsersArray?.ToList() ?? DefaultPositiveAnswers;
+            _negativeAnswersArray = negativeAnwsersArray.ToList() ?? DefaultNegativeAnswers;
         }
 
         public GameResult ProcessAnswer(string userAnswer)
@@ -56,7 +59,7 @@ namespace TrueOrFalseGame
             );
         }
 
-        private static bool CheckAnswer(Question question, string userAnswer)
+        private bool CheckAnswer(Question question, string userAnswer)
         {
             if (string.IsNullOrWhiteSpace(userAnswer))
                 return false;
@@ -67,15 +70,20 @@ namespace TrueOrFalseGame
                 : IsNegativeAnswer(normalizedInput);
         }
 
-        private static bool IsPositiveAnswer(string input) =>
-            _positiveAnwsersArray.Contains(input);
+        private  bool IsPositiveAnswer(string input) =>
+            _positiveAnswersArray.Contains(input);
 
-        private static bool IsNegativeAnswer(string input) =>
-            _negativeAnwsersArray.Contains(input);
+        private  bool IsNegativeAnswer(string input) =>
+            _negativeAnswersArray.Contains(input);
 
-        public bool ProcessAnswerValidation(string answer)
+        public bool IsValidAnswerFormat(string input)
         {
-            return _positiveAnwsersArray.Contains(answer) || _negativeAnwsersArray.Contains(answer);
+            if (string.IsNullOrWhiteSpace(input))
+                return false;
+
+            string normalized = input.Trim().ToLowerInvariant();
+            return _positiveAnswersArray.Contains(normalized) ||
+                   _negativeAnswersArray.Contains(normalized);
         }
     }
 }
