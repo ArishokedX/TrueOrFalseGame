@@ -15,13 +15,14 @@ namespace TrueOrFalseGame
         public event Action<string> OnQuestionAsked;
         public event Action<GameResult> OnAnswerProcessed;
         public event Action<GameResult> OnGameEnded;
-
-        public GameController(IQuestionSource questionSource, IEnumerable<string> positiveAnswersArray, IEnumerable<string> negativeAnswersArray)
+        private int _maxMistakesAllowed;
+        public GameController(IQuestionSource questionSource, IEnumerable<string> positiveAnswersArray, IEnumerable<string> negativeAnswersArray,int maxMistakesAllowed = 2)
         {
             // _engine = engine ?? throw new ArgumentNullException(nameof(engine));
             _source = questionSource ?? throw new GameControllerExceptions(nameof(questionSource),null);
             NegativeAnswersArray = negativeAnswersArray;
             PositiveAnswersArray = positiveAnswersArray;
+            _maxMistakesAllowed = maxMistakesAllowed;
         }
 
         public void StartGame()
@@ -33,8 +34,17 @@ namespace TrueOrFalseGame
                 {
                     throw new GameControllerExceptions("Error. Questions number must exceed zero.",null);
                 }
+                if (_maxMistakesAllowed <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(
+                        paramName: nameof(_maxMistakesAllowed),
+                        actualValue: _maxMistakesAllowed,
+                        message: "Game difficulty must be positive. " +
+                                 $"Value '{_maxMistakesAllowed}' is not valid. " +
+                                 "Please specify how many mistakes are allowed before game over.");
 
-                _engine = new GameEngine(questions, _source.MaxMistakesAllowed, PositiveAnswersArray,
+                }
+                _engine = new GameEngine(questions,_maxMistakesAllowed, PositiveAnswersArray,
                     NegativeAnswersArray);
 
                 while (!_engine.IsGameEnded)

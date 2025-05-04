@@ -17,8 +17,7 @@ namespace TruOrFalseGame.Tests.Unit
             // Arrange
             var line = "Верите ли вы, что Земля плоская?;No;Научно доказано, что Земля имеет форму геоида";
             // Act
-            var qe = new CsvQuestionSource("", Encoding.UTF8, ';');
-            var question = qe.Parse(line);
+            var question = CsvQuestionSource.ParseQuestionLine(line);
 
             // Assert
             question.Should().NotBeNull();
@@ -32,9 +31,8 @@ namespace TruOrFalseGame.Tests.Unit
         [InlineData("1;;False;No explanation")]
         public void ParseQuestion_InvalidLine_ThrowsException(string invalidLine)
         {
-            var qe = new CsvQuestionSource("", Encoding.UTF8, ';');
             // Act & Assert
-            Assert.Throws<FormatException>(() => qe.Parse(invalidLine));
+            Assert.Throws<FormatException>(() => CsvQuestionSource.ParseQuestionLine(invalidLine));
         }
     }
 }

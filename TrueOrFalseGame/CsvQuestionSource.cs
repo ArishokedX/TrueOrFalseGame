@@ -11,28 +11,14 @@ namespace TrueOrFalseGame
     public class CsvQuestionSource : IQuestionSource
     {
         private readonly string _filePath;
-        private readonly int _maxMistakesAllowed;
-        private readonly char _separator;
-
-        public int MaxMistakesAllowed => _maxMistakesAllowed;
-
-        public CsvQuestionSource(string filePath, int maxMistakesAllowed = 2, char separator = ';')
+        private static char _separator;
+        public CsvQuestionSource(string filePath, char separator = ';')
         {
             if (string.IsNullOrWhiteSpace(filePath))
                 throw new ArgumentNullException(nameof(filePath));
-            if (maxMistakesAllowed <= 0)
-            {
-                throw new ArgumentOutOfRangeException(
-                    paramName: nameof(maxMistakesAllowed),
-                    actualValue: maxMistakesAllowed,
-                    message: "Game difficulty must be positive. " +
-                             $"Value '{maxMistakesAllowed}' is not valid. " +
-                             "Please specify how many mistakes are allowed before game over.");
-
-            }
+            
 
             _filePath = filePath;
-            _maxMistakesAllowed = maxMistakesAllowed;
             _separator = separator;
         }
 
@@ -60,7 +46,7 @@ namespace TrueOrFalseGame
             }
         }
 
-        private Question ParseQuestionLine(string line)
+        public static Question ParseQuestionLine(string line)
         {
             if (string.IsNullOrWhiteSpace(line))
                 return null;
