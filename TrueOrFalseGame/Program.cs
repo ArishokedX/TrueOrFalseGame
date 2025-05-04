@@ -40,9 +40,9 @@ namespace TrueOrFalseGame
 
 
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine(ex.ToString()+". "+ex.Message + ". " + ex.InnerException?.Message);
                 Console.ReadLine();
                 ;
             }

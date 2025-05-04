@@ -28,19 +28,19 @@ namespace TrueOrFalseGame
         public GameEngine(IEnumerable<Question> questions, int maxMistakesAllowed = 2,
             IEnumerable<string> positiveAnwsersArray = null, IEnumerable<string> negativeAnwsersArray = null)
         {
-            _questions = new List<Question>(questions ?? throw new ArgumentNullException(nameof(questions)));
+            _questions = new List<Question>(questions ?? throw new GameEngineExceptions(nameof(questions)));
             _maxMistakesAllowed = maxMistakesAllowed > 0
                 ? maxMistakesAllowed
-                : throw new ArgumentException("Max mistakes must be positive");
+                : throw new GameEngineExceptions("Max mistakes must be positive",null);
             _positiveAnswersArray = positiveAnwsersArray?.ToList() ?? DefaultPositiveAnswers;
             _negativeAnswersArray = negativeAnwsersArray.ToList() ?? DefaultNegativeAnswers;
+            _currentQuestionIndex = 0;
         }
 
         public GameResult ProcessAnswer(string userAnswer)
         {
             if (IsGameEnded)
-                throw new InvalidOperationException("Game is already over");
-
+                throw new GameEngineExceptions("Game is already over");
             var isCorrect = CheckAnswer(CurrentQuestion, userAnswer);
 
             if (isCorrect) Score++;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Runtime;
 using System.Text;
@@ -48,10 +49,10 @@ namespace TrueOrFalseGame
             try
             {
                 return File.ReadAllLines(_filePath)
-                    .Skip(1) // Пропускаем заголовок
-                    .Select(ParseQuestionLine)
-                    .Where(q => q != null)
-                    .ToList();
+                       .Skip(1) // Пропускаем заголовок
+                       .Select(ParseQuestionLine)
+                       .Where(q => q != null)
+                       .ToList();
             }
             catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
             {
@@ -93,14 +94,6 @@ namespace TrueOrFalseGame
                 "false" or "no" or "нет" or "0" => false,
                 _ => throw new FormatException($"Invalid boolean value: {value}")
             };
-        }
-    }
-
-    public class QuestionSourceException : Exception
-    {
-        public QuestionSourceException(string message, Exception innerException)
-            : base(message, innerException)
-        {
         }
     }
 }

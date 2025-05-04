@@ -19,7 +19,7 @@ namespace TrueOrFalseGame
         public GameController(IQuestionSource questionSource, IEnumerable<string> positiveAnswersArray, IEnumerable<string> negativeAnswersArray)
         {
             // _engine = engine ?? throw new ArgumentNullException(nameof(engine));
-            _source = questionSource ?? throw new ArgumentNullException(nameof(questionSource));
+            _source = questionSource ?? throw new GameControllerExceptions(nameof(questionSource),null);
             NegativeAnswersArray = negativeAnswersArray;
             PositiveAnswersArray = positiveAnswersArray;
         }
@@ -28,8 +28,14 @@ namespace TrueOrFalseGame
         {
             try
             {
-                var questions = _source.LoadQuestions(); 
-                _engine = new GameEngine(questions, _source.MaxMistakesAllowed, PositiveAnswersArray, NegativeAnswersArray);
+                var questions = _source.LoadQuestions();
+                if (!questions.Any())
+                {
+                    throw new GameControllerExceptions("Error. Questions number must exceed zero.",null);
+                }
+
+                _engine = new GameEngine(questions, _source.MaxMistakesAllowed, PositiveAnswersArray,
+                    NegativeAnswersArray);
 
                 while (!_engine.IsGameEnded)
                 {
@@ -38,7 +44,7 @@ namespace TrueOrFalseGame
 
                 NotifyGameEnd();
             }
-            catch (Exception ex)
+            catch (GameEngineExceptions ex)
             {
                 OnGameEnded?.Invoke(new GameResult(
                     IsCorrect: false,
