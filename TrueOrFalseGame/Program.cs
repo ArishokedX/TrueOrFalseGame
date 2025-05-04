@@ -2,6 +2,7 @@
 
 namespace TrueOrFalseGame
 {
+    using System.Linq;
     using System.Reflection;
     using System.Runtime;
     using Microsoft.Extensions.Configuration;
@@ -18,9 +19,9 @@ namespace TrueOrFalseGame
             {
 
                 InitializeFromJson(out var settings);
-                IQuestionSource qs = new CsvQuestionSource(settings.QuestionsFilePath, settings.Separator);
-                gameController = new GameController(qs,settings.PositiveAsnwersArray.Select(x=>x.Trim()),
-                    settings.NegativeAsnwersArray.Select(x => x.Trim()),settings.MaxMistakesAllowed);
+                IQuestionSource qs = new CsvQuestionSource(settings.QuestionsFilePath,  settings.PositiveAsnwersArray.Select(x => x.Trim())
+                    , settings.NegativeAsnwersArray.Select(x => x.Trim()), settings.Separator);
+                gameController = new GameController(qs);
                 gameController.OnQuestionAsked += OnQuestionAskedHandler;
                 gameController.OnAnswerProcessed += OnAnswerProcessedHandler;
                 gameController.OnGameEnded += OnGameEndedHandler;

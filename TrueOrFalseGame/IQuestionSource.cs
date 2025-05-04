@@ -6,7 +6,8 @@
         /// <summary>
         /// Загружает вопросы из источника данных
         /// </summary>
-
+        public IEnumerable<string> NegativeAnswersArray { get;}
+        public IEnumerable<string> PositiveAnswersArray { get;}
         public IEnumerable<Question> LoadQuestions();
 
         /// <summary>

@@ -13,8 +13,6 @@ namespace TrueOrFalseGame
         private readonly int _maxMistakesAllowed;
         private int _currentQuestionIndex;
         private int _mistakesCount;
-        public IReadOnlyCollection<string> DefaultPositiveAnswers = ["да", "yes", "1", "true","+"];
-        public IReadOnlyCollection<string> DefaultNegativeAnswers = ["нет", "no", "0", "false", "-"];
         private readonly IReadOnlyCollection<string> _positiveAnswersArray;
         private readonly IReadOnlyCollection<string> _negativeAnswersArray;
         public int Score { get; private set; }
@@ -25,15 +23,15 @@ namespace TrueOrFalseGame
         public int QuestionsLeft => _questions.Count - _currentQuestionIndex;
         public int AttemptsLeft => _maxMistakesAllowed - _mistakesCount;
 
-        public GameEngine(IEnumerable<Question> questions, int maxMistakesAllowed = 2,
-            IEnumerable<string> positiveAnwsersArray = null, IEnumerable<string> negativeAnwsersArray = null)
+        public GameEngine(IEnumerable<Question> questions,
+            IEnumerable<string> positiveAnwsersArray , IEnumerable<string> negativeAnwsersArray, int maxMistakesAllowed = 2)
         {
             _questions = new List<Question>(questions ?? throw new GameEngineExceptions(nameof(questions)));
             _maxMistakesAllowed = maxMistakesAllowed > 0
                 ? maxMistakesAllowed
                 : throw new GameEngineExceptions("Max mistakes must be positive",null);
-            _positiveAnswersArray = positiveAnwsersArray?.ToList() ?? DefaultPositiveAnswers;
-            _negativeAnswersArray = negativeAnwsersArray.ToList() ?? DefaultNegativeAnswers;
+            _positiveAnswersArray = positiveAnwsersArray.ToList();
+            _negativeAnswersArray = negativeAnwsersArray.ToList();
             _currentQuestionIndex = 0;
         }
 
@@ -45,18 +43,19 @@ namespace TrueOrFalseGame
 
             if (isCorrect) Score++;
             else _mistakesCount++;
-
+            var explanation = CurrentQuestion.Explanation;
             _currentQuestionIndex++;
-
             return new GameResult(
                 IsCorrect: isCorrect,
-                Explanation: isCorrect ? string.Empty : CurrentQuestion.Explanation,
+                Explanation: isCorrect ? string.Empty : explanation,
                 IsGameOver: IsGameEnded,
                 IsWinner: IsWinner,
                 Score: Score,
                 QuestionsLeft: QuestionsLeft,
                 AttemptsLeft: AttemptsLeft
             );
+            
+
         }
 
         private bool CheckAnswer(Question question, string userAnswer)

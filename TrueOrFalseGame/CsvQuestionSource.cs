@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,8 +12,26 @@ namespace TrueOrFalseGame
     public class CsvQuestionSource : IQuestionSource
     {
         private readonly string _filePath;
-        private static char _separator;
-        public CsvQuestionSource(string filePath, char separator = ';')
+        private char _separator;
+        private readonly IReadOnlyCollection<string> _negativeAnswersArray;
+        private readonly IReadOnlyCollection<string> _positiveAnswersArray;
+        public IReadOnlyCollection<string> DefaultPositiveAnswers = ["да", "yes", "1", "true", "+"];
+        public IReadOnlyCollection<string> DefaultNegativeAnswers = ["нет", "no", "0", "false", "-"];
+        public IEnumerable<string> PositiveAnswersArray
+        {
+            get
+            {
+                return _positiveAnswersArray;
+            }
+        }
+        public IEnumerable<string> NegativeAnswersArray
+        {
+            get
+            {
+                return _negativeAnswersArray;
+            }
+        }
+        public CsvQuestionSource(string filePath, IEnumerable<string> positiveAnswersArray , IEnumerable<string> negativeAnswersArray, char separator = ';')
         {
             if (string.IsNullOrWhiteSpace(filePath))
                 throw new ArgumentNullException(nameof(filePath));
@@ -20,6 +39,8 @@ namespace TrueOrFalseGame
 
             _filePath = filePath;
             _separator = separator;
+            _positiveAnswersArray = positiveAnswersArray?.Select(x=> x.Trim().ToLowerInvariant()).ToList() ?? DefaultPositiveAnswers;
+            _negativeAnswersArray = negativeAnswersArray?.Select(x => x.Trim().ToLowerInvariant()).ToList() ?? DefaultNegativeAnswers;
         }
 
         public bool IsAvailable()
@@ -46,10 +67,11 @@ namespace TrueOrFalseGame
             }
         }
 
-        public static Question ParseQuestionLine(string line)
+        
+        public Question ParseQuestionLine(string line)
         {
             if (string.IsNullOrWhiteSpace(line))
-                return null;
+                throw new FormatException($"Input string is should not be empty,");
 
             var parts = line.Split(_separator);
 
@@ -72,14 +94,15 @@ namespace TrueOrFalseGame
             }
         }
 
-        private static bool ParseBool(string value)
+        private bool ParseBool(string value)
         {
-            return value.ToLowerInvariant() switch
-            {
-                "true" or "yes" or "да" or "1" => true,
-                "false" or "no" or "нет" or "0" => false,
-                _ => throw new FormatException($"Invalid boolean value: {value}")
-            };
+            if (_positiveAnswersArray.Contains(value.ToLowerInvariant()) ||
+                _negativeAnswersArray.Contains(value.ToLowerInvariant()))
+                return _positiveAnswersArray.Contains(value.ToLowerInvariant());
+            else
+                throw new FormatException($"Invalid boolean value: {value}");
+
+
         }
     }
 }

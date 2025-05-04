@@ -10,18 +10,14 @@ namespace TrueOrFalseGame
     {
         private GameEngine _engine;
         private readonly IQuestionSource _source;
-        public IEnumerable<string> NegativeAnswersArray { get; private set; }
-        public IEnumerable<string> PositiveAnswersArray { get; private set; }
         public event Action<string> OnQuestionAsked;
         public event Action<GameResult> OnAnswerProcessed;
         public event Action<GameResult> OnGameEnded;
         private int _maxMistakesAllowed;
-        public GameController(IQuestionSource questionSource, IEnumerable<string> positiveAnswersArray, IEnumerable<string> negativeAnswersArray,int maxMistakesAllowed = 2)
+        public GameController(IQuestionSource questionSource,int maxMistakesAllowed = 2)
         {
             // _engine = engine ?? throw new ArgumentNullException(nameof(engine));
             _source = questionSource ?? throw new GameControllerExceptions(nameof(questionSource),null);
-            NegativeAnswersArray = negativeAnswersArray;
-            PositiveAnswersArray = positiveAnswersArray;
             _maxMistakesAllowed = maxMistakesAllowed;
         }
 
@@ -32,8 +28,9 @@ namespace TrueOrFalseGame
                 var questions = _source.LoadQuestions();
                 if (!questions.Any())
                 {
-                    throw new GameControllerExceptions("Error. Questions number must exceed zero.",null);
+                    throw new GameControllerExceptions("Error. Questions number must exceed zero.", null);
                 }
+
                 if (_maxMistakesAllowed <= 0)
                 {
                     throw new ArgumentOutOfRangeException(
@@ -44,15 +41,12 @@ namespace TrueOrFalseGame
                                  "Please specify how many mistakes are allowed before game over.");
 
                 }
-                _engine = new GameEngine(questions,_maxMistakesAllowed, PositiveAnswersArray,
-                    NegativeAnswersArray);
 
-                while (!_engine.IsGameEnded)
-                {
-                    AskCurrentQuestion();
-                }
+                _engine = new GameEngine(questions, _source.PositiveAnswersArray,
+                    _source.NegativeAnswersArray, _maxMistakesAllowed);
 
-                NotifyGameEnd();
+
+                AskCurrentQuestion();
             }
             catch (GameEngineExceptions ex)
             {
@@ -75,8 +69,19 @@ namespace TrueOrFalseGame
 
         public void SubmitAnswer(string userAnswer)
         {
+            if (_engine.IsGameEnded) return;
+
             var result = _engine.ProcessAnswer(userAnswer);
             OnAnswerProcessed?.Invoke(result);
+
+            if (!_engine.IsGameEnded)
+            {
+                AskCurrentQuestion(); // Ask next question
+            }
+            if(_engine.IsGameEnded)
+            {
+                NotifyGameEnd();
+            }
         }
 
         private void NotifyGameEnd()
